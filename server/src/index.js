@@ -55,8 +55,15 @@ app.use('/api/reports', reportRoutes);
 app.use('/api/email-ingestion', emailIngestionRoutes);
 
 // Health check
+const mongoose = require('mongoose');
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  const dbState = ['disconnected', 'connected', 'connecting', 'disconnecting'];
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    db: dbState[mongoose.connection.readyState] || 'unknown',
+    mongoUri: process.env.MONGODB_URI ? 'set (' + process.env.MONGODB_URI.substring(0, 30) + '...)' : 'NOT SET - using fallback',
+  });
 });
 
 // Serve React build in production
