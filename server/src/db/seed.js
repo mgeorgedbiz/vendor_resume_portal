@@ -76,7 +76,9 @@ async function seed() {
 }
 
 if (require.main === module) {
-  require('dotenv').config({ path: require('path').resolve(__dirname, '../../../.env.example') });
+  const envPath = require('path').resolve(__dirname, '../../../.env');
+  const envExamplePath = require('path').resolve(__dirname, '../../../.env.example');
+  require('dotenv').config({ path: require('fs').existsSync(envPath) ? envPath : envExamplePath });
   const { connectDB } = require('./pool');
   connectDB().then(() => seed()).then(() => { process.exit(0); }).catch((err) => { console.error(err); process.exit(1); });
 }

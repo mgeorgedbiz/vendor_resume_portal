@@ -1,4 +1,6 @@
-require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env.example') });
+const envPath = require('path').resolve(__dirname, '../../.env');
+const envExamplePath = require('path').resolve(__dirname, '../../.env.example');
+require('dotenv').config({ path: require('fs').existsSync(envPath) ? envPath : envExamplePath });
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -20,11 +22,9 @@ const emailIngestionRoutes = require('./routes/emailIngestion');
 const app = express();
 
 // Security middleware
-app.use(helmet());
+app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production'
-    ? 'https://yourdomain.com'
-    : 'http://localhost:3000',
+  origin: process.env.CORS_ORIGIN || (process.env.NODE_ENV === 'production' ? true : 'http://localhost:3000'),
   credentials: true
 }));
 
@@ -55,6 +55,15 @@ app.use('/api/email-ingestion', emailIngestionRoutes);
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
+
+// Serve React build in production
+const clientBuildPath = path.join(__dirname, '../../client/build');
+if (require('fs').existsSync(clientBuildPath)) {
+  app.use(express.static(clientBuildPath));
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(clientBuildPath, 'index.html'));
+  });
+}
 
 // Global error handler
 app.use((err, req, res, next) => {

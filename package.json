@@ -1,15 +1,18 @@
 {
   "name": "resume-vendor-management",
   "version": "1.0.0",
-  "description": "Resume Vendor Management System - Node.js + PostgreSQL + React",
+  "description": "Resume Vendor Management System - Node.js + MongoDB + React",
   "private": true,
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "dev:server": "cd server && npm run dev",
     "dev:client": "cd client && npm start",
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
-    "migrate": "cd server && npm run migrate",
     "seed": "cd server && npm run seed",
-    "build": "cd client && npm run build"
+    "build": "cd client && npm install && npm run build && cd ../server && npm install",
+    "start": "cd server && node src/index.js"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
