@@ -82,13 +82,24 @@ const PORT = process.env.PORT || 4000;
 const HOST = '0.0.0.0';
 
 async function start() {
-  await connectDB();
+  // Start HTTP server first so Railway health checks pass
   app.listen(PORT, HOST, () => {
     logger.info(`Server running on ${HOST}:${PORT}`);
   });
+
+  // Then connect to DB (retry on failure)
+  try {
+    await connectDB();
+  } catch (err) {
+    logger.error('Initial DB connection failed, retrying in 5s...', err.message);
+    setTimeout(async () => {
+      try { await connectDB(); } catch (e) {
+        logger.error('DB retry failed:', e.message);
+      }
+    }, 5000);
+  }
 }
 
 start().catch(err => {
   logger.error('Failed to start server:', err);
-  process.exit(1);
 });
