@@ -1,6 +1,9 @@
+const fs = require('fs');
 const envPath = require('path').resolve(__dirname, '../../.env');
-const envExamplePath = require('path').resolve(__dirname, '../../.env.example');
-require('dotenv').config({ path: require('fs').existsSync(envPath) ? envPath : envExamplePath });
+// Only load .env file in local dev; in production, env vars come from the platform
+if (fs.existsSync(envPath)) {
+  require('dotenv').config({ path: envPath });
+}
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
