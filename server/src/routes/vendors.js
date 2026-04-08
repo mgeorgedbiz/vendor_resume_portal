@@ -49,9 +49,17 @@ router.get('/:id', authenticate, async (req, res) => {
 
 router.post('/', authenticate, authorize('admin', 'recruiter'), async (req, res) => {
   try {
-    const { name, email, emailDomains, contactPerson, phone, color } = req.body;
+    const { name, email, emailDomains, allowedEmails, contactPerson, phone, color } = req.body;
     if (!name || !email) return res.status(400).json({ error: 'Name and email are required' });
-    const vendor = await Vendor.create({ name, email, emailDomains: emailDomains || [], contactPerson, phone, color: color || '#6B7280' });
+    const vendor = await Vendor.create({ 
+      name, 
+      email, 
+      emailDomains: emailDomains || [], 
+      allowedEmails: allowedEmails || [],
+      contactPerson, 
+      phone, 
+      color: color || '#6B7280' 
+    });
     res.status(201).json(vendor);
   } catch (err) {
     if (err.code === 11000) return res.status(409).json({ error: 'Vendor email already exists' });
@@ -61,11 +69,12 @@ router.post('/', authenticate, authorize('admin', 'recruiter'), async (req, res)
 
 router.put('/:id', authenticate, authorize('admin', 'recruiter'), async (req, res) => {
   try {
-    const { name, email, emailDomains, contactPerson, phone, color, isActive } = req.body;
+    const { name, email, emailDomains, allowedEmails, contactPerson, phone, color, isActive } = req.body;
     const update = {};
     if (name !== undefined) update.name = name;
     if (email !== undefined) update.email = email;
     if (emailDomains !== undefined) update.emailDomains = emailDomains;
+    if (allowedEmails !== undefined) update.allowedEmails = allowedEmails;
     if (contactPerson !== undefined) update.contactPerson = contactPerson;
     if (phone !== undefined) update.phone = phone;
     if (color !== undefined) update.color = color;

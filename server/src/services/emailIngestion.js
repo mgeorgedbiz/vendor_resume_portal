@@ -12,11 +12,27 @@ const logger = require('../utils/logger');
 
 const UPLOAD_DIR = path.join(__dirname, '../../uploads');
 
+// Parse allowed emails from environment variable
+function getGlobalAllowedEmails() {
+  const envEmails = process.env.ALLOWED_EMAILS || '';
+  return envEmails.split(',').map(e => e.trim().toLowerCase()).filter(e => e.length > 0);
+}
+
 function ensureUploadDir() {
   if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 }
 
 async function identifyVendor(fromEmail) {
+  const normalizedEmail = fromEmail.toLowerCase();
+  
+  // First, check if email matches by specific allowed email
+  const vendorByEmail = await Vendor.findOne({ 
+    allowedEmails: normalizedEmail, 
+    isActive: true 
+  });
+  if (vendorByEmail) return vendorByEmail;
+  
+  // Then check by domain
   const domain = fromEmail.split('@')[1]?.toLowerCase();
   if (!domain) return null;
   return Vendor.findOne({ emailDomains: domain, isActive: true });
@@ -52,10 +68,22 @@ async function processEmail(parsed) {
   if (!fromEmail) { logger.warn('Email has no sender address, skipping'); return; }
   if (await isAlreadyProcessed(messageId)) { logger.info('Email ' + messageId + ' already processed'); return; }
 
+  // Check global allowed emails list (if configured)
+  const globalAllowedEmails = getGlobalAllowedEmails();
+  if (globalAllowedEmails.length > 0 && !globalAllowedEmails.includes(fromEmail)) {
+    await EmailIngestionLog.create({ 
+      messageId, fromEmail, subject, 
+      status: 'rejected', 
+      errorMessage: 'Email not in allowed list' 
+    });
+    logger.warn('Email rejected - not in allowed list: ' + fromEmail);
+    return;
+  }
+
   const vendor = await identifyVendor(fromEmail);
   if (!vendor) {
-    await EmailIngestionLog.create({ messageId, fromEmail, subject, status: 'failed', errorMessage: 'Unknown vendor domain' });
-    logger.warn('Unknown vendor domain for ' + fromEmail);
+    await EmailIngestionLog.create({ messageId, fromEmail, subject, status: 'failed', errorMessage: 'Unknown vendor or email not allowed' });
+    logger.warn('Unknown vendor or unauthorized email: ' + fromEmail);
     return;
   }
 

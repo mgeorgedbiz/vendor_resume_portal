@@ -4,6 +4,7 @@ const vendorSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true, lowercase: true },
   emailDomains: [{ type: String, lowercase: true }],
+  allowedEmails: [{ type: String, lowercase: true }], // Specific email addresses allowed to send resumes
   contactPerson: String,
   phone: String,
   color: { type: String, default: '#6B7280' },

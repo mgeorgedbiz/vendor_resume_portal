@@ -93,6 +93,19 @@ async function start() {
     logger.info(`Server running on ${HOST}:${PORT}`);
   });
   await connectDB();
+  
+  // Auto-start email ingestion if configured
+  const { startImapListener } = require('./services/emailIngestion');
+  if (process.env.IMAP_HOST && process.env.IMAP_USER && process.env.IMAP_PASSWORD) {
+    try {
+      startImapListener({});
+      logger.info('✅ Email ingestion auto-started - monitoring inbox every 60 seconds');
+    } catch (err) {
+      logger.error('Failed to start email ingestion:', err.message);
+    }
+  } else {
+    logger.info('Email ingestion not configured (IMAP settings missing)');
+  }
 }
 
 start().catch(err => {
